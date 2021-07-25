@@ -14,7 +14,7 @@ namespace my_sys {
         template<typename SCALAR>
         class UAV_Model : ct::core::ControlledSystem<8, 7, SCALAR> {
         public:
-            static const Eigen::Matrix<SCALAR, 8, 225> STATE_DIM = 8;
+            static const size_t STATE_DIM = 8;
             static const size_t CONTROL_DIM = 7;
 
             void computeControlledDynamics(const ct::core::StateVector <STATE_DIM, SCALAR> &state,
