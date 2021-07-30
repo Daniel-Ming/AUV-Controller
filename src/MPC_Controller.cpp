@@ -14,13 +14,10 @@ int main(int argc, char** argv){
     StateVector<state_dim> x0;
     StateVector<state_dim> x_final;
     ControlVector<control_dim> u0;
+    x0.setRandom();
     u0.setZero();
     ControlVector<control_dim> u_lb;
     ControlVector<control_dim> u_hb;
-
-    x_final << 0,0,0,0,0,0,0,0;
-    u_lb << -1000,-1000,-1000,-1000,0,-10,-10, 1;
-    u_hb << 1000, 1000, 1000, 1000,0,10, 10, 1;
 
     mat_t *Amat;
     mat_t *Bmat;
@@ -70,9 +67,24 @@ int main(int argc, char** argv){
     B7 << B(6,0),B(6,1),B(6,2),B(6,3),B(6,4),B(6,5),B(6,6),B(6,7);
     B8 << B(7,0),B(7,1),B(7,2),B(7,3),B(7,4),B(7,5),B(7,6),B(7,7);
 
-    x0.setRandom();
-    u0.setZero();
-    std::shared_ptr<ct::core::ControlledSystem<state_dim, control_dim>> AUV_Dynamics(new my_sys::auv_model::AUV_Model(A1,A2,A3,A4,A5,A6,A7,A8,B1,B2,B3,B4,B5,B6,B7,B8));
+    // Under SCALAR templating operation, our model class can only handle 1D verctor
+    // Besides, matrix multiplication cannot be conducted in our model class
+    std::shared_ptr<ct::core::ControlledSystem<state_dim, control_dim>> AUV_Dynamics(new my_sys::auv_model::AUV_Model(A1,
+                                                                                                                            A2,
+                                                                                                                            A3,
+                                                                                                                            A4,
+                                                                                                                            A5,
+                                                                                                                            A6,
+                                                                                                                            A7,
+                                                                                                                            A8,
+                                                                                                                            B1,
+                                                                                                                            B2,
+                                                                                                                            B3,
+                                                                                                                            B4,
+                                                                                                                            B5,
+                                                                                                                            B6,
+                                                                                                                            B7,
+                                                                                                                            B8));
     /*************** Configure the costFunction and load intermediateCost to set Q and R ***************/
     std::shared_ptr<ct::optcon::TermQuadratic<state_dim, control_dim>> intermediateCost(new ct::optcon::TermQuadratic<state_dim, control_dim>());
     intermediateCost->loadConfigFile("../include/AUVCost.info", "intermediateCost", true);
