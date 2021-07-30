@@ -1,38 +1,85 @@
 #include <ct/optcon/optcon.h>
-#include "../include/exampleDir.h"
+#include <iostream>
+#include <matio.h>
+#include "../include/AUV_model.h"
 
+using namespace std;
 using namespace ct::core;
 using namespace ct::optcon;
-using namespace std;
-
 int main(int argc, char** argv){
 
-    /* PRELIMINIARIES, see example NLOC.cpp */
-    const size_t state_dim = ct::core::SecondOrderSystem::STATE_DIM;
-    const size_t control_dim = ct::core::SecondOrderSystem::CONTROL_DIM;
-    double w_n = 0.1;
-    double zeta = 5.0;
-
-    std::shared_ptr<ct::core::ControlledSystem<state_dim, control_dim>> oscillatorDynamics(new ct::core::SecondOrderSystem(w_n, zeta));
-    std::shared_ptr<ct::core::SystemLinearizer<state_dim, control_dim>> adLinearizer(new ct::core::SystemLinearizer<state_dim, control_dim>(oscillatorDynamics));
-    std::shared_ptr<ct::optcon::TermQuadratic<state_dim, control_dim>> intermediateCost(new ct::optcon::TermQuadratic<state_dim, control_dim>());
-    std::shared_ptr<ct::optcon::TermQuadratic<state_dim, control_dim>> finalCost(new ct::optcon::TermQuadratic<state_dim, control_dim>());
-
-    bool verbose = true;
-    intermediateCost->loadConfigFile(ct::optcon::exampleDir + "/mpcCost.info", "intermediateCost", verbose);
-    finalCost->loadConfigFile(ct::optcon::exampleDir + "/mpcCost.info", "finalCost", verbose);
-
-    std::shared_ptr<CostFunctionQuadratic<state_dim, control_dim>> costFunction(new CostFunctionAnalytical<state_dim, control_dim>());
-    costFunction->addIntermediateTerm(intermediateCost);
-    costFunction->addFinalTerm(finalCost);
-
+    const size_t state_dim = my_sys::auv_model::AUV_Model::STATE_DIM ;
+    const size_t control_dim = my_sys::auv_model::AUV_Model::CONTROL_DIM;
+    ct::core::Time timeHorizon = 3.0;
     StateVector<state_dim> x0;
-    x0.setRandom();
+    StateVector<state_dim> x_final;
     ControlVector<control_dim> u0;
     u0.setZero();
+    ControlVector<control_dim> u_lb;
+    ControlVector<control_dim> u_hb;
 
-    ct::core::Time timeHorizon = 3.0;
-    ContinuousOptConProblem<state_dim, control_dim> optConProblem(timeHorizon, x0, oscillatorDynamics, costFunction, adLinearizer);
+    x_final << 0,0,0,0,0,0,0,0;
+    u_lb << -1000,-1000,-1000,-1000,0,-10,-10, 1;
+    u_hb << 1000, 1000, 1000, 1000,0,10, 10, 1;
+
+    mat_t *Amat;
+    mat_t *Bmat;
+    matvar_t *Amat_var;
+    matvar_t *Bmat_var;
+    Amat = Mat_Open("../UAV_nolag_Model/A_c.mat", MAT_ACC_RDONLY);
+    Bmat = Mat_Open("../UAV_nolag_Model/B_c.mat", MAT_ACC_RDONLY);
+    Amat_var = Mat_VarRead(Amat, "A_s_c");
+    Bmat_var = Mat_VarRead(Bmat, "B_c_c");
+    const double *Adata = static_cast<const double*>(Amat_var->data);
+    const double *Bdata = static_cast<const double*>(Bmat_var->data);
+    Eigen::Matrix<double,8,8> A;
+    Eigen::Matrix<double,8,8> B;
+    for(int col=0,i=0;col<8;col++){
+        for (int row=0;row<8;row++){
+            A(row,col) = Adata[i++];
+        }
+    }
+    for(int col=0,i=0;col<8;col++){
+        for (int row=0;row<8;row++){
+            B(row,col) = Bdata[i++];
+        }
+    }
+    StateVector<8> A1, B1; // 8*1
+    StateVector<8> A2, B2;
+    StateVector<8> A3, B3;
+    StateVector<8> A4, B4;
+    StateVector<8> A5, B5;
+    StateVector<8> A6, B6;
+    StateVector<8> A7, B7;
+    StateVector<8> A8, B8;
+    A1 << A(0,0),A(0,1),A(0,2),A(0,3),A(0,4),A(0,5),A(0,6),A(0,7);
+    A2 << A(1,0),A(1,1),A(1,2),A(1,3),A(1,4),A(1,5),A(1,6),A(1,7);
+    A3 << A(2,0),A(2,1),A(2,2),A(2,3),A(2,4),A(2,5),A(2,6),A(2,7);
+    A4 << A(3,0),A(3,1),A(3,2),A(3,3),A(3,4),A(3,5),A(3,6),A(3,7);
+    A5 << A(4,0),A(4,1),A(4,2),A(4,3),A(4,4),A(4,5),A(4,6),A(4,7);
+    A6 << A(5,0),A(5,1),A(5,2),A(5,3),A(5,4),A(5,5),A(5,6),A(5,7);
+    A7 << A(6,0),A(6,1),A(6,2),A(6,3),A(6,4),A(6,5),A(6,6),A(6,7);
+    A8 << A(7,0),A(7,1),A(7,2),A(7,3),A(7,4),A(7,5),A(7,6),A(7,7);
+
+    B1 << B(0,0),B(0,1),B(0,2),B(0,3),B(0,4),B(0,5),B(0,6),B(0,7);
+    B2 << B(1,0),B(1,1),B(1,2),B(1,3),B(1,4),B(1,5),B(1,6),B(1,7);
+    B3 << B(2,0),B(2,1),B(2,2),B(2,3),B(2,4),B(2,5),B(2,6),B(2,7);
+    B4 << B(3,0),B(3,1),B(3,2),B(3,3),B(3,4),B(3,5),B(3,6),B(3,7);
+    B5 << B(4,0),B(4,1),B(4,2),B(4,3),B(4,4),B(4,5),B(4,6),B(4,7);
+    B6 << B(5,0),B(5,1),B(5,2),B(5,3),B(5,4),B(5,5),B(5,6),B(5,7);
+    B7 << B(6,0),B(6,1),B(6,2),B(6,3),B(6,4),B(6,5),B(6,6),B(6,7);
+    B8 << B(7,0),B(7,1),B(7,2),B(7,3),B(7,4),B(7,5),B(7,6),B(7,7);
+
+    x0.setRandom();
+    u0.setZero();
+    std::shared_ptr<ct::core::ControlledSystem<state_dim, control_dim>> AUV_Dynamics(new my_sys::auv_model::AUV_Model(A1,A2,A3,A4,A5,A6,A7,A8,B1,B2,B3,B4,B5,B6,B7,B8));
+    /*************** Configure the costFunction and load intermediateCost to set Q and R ***************/
+    std::shared_ptr<ct::optcon::TermQuadratic<state_dim, control_dim>> intermediateCost(new ct::optcon::TermQuadratic<state_dim, control_dim>());
+    intermediateCost->loadConfigFile("../include/AUVCost.info", "intermediateCost", true);
+    std::shared_ptr<CostFunctionQuadratic<state_dim, control_dim>> costFunction(new CostFunctionAnalytical<state_dim, control_dim>());
+    costFunction->addIntermediateTerm(intermediateCost);
+    ContinuousOptConProblem<state_dim, control_dim> optConProblem(timeHorizon, x0,AUV_Dynamics, costFunction);
+    /***************************************************************************************************/
 
     NLOptConSettings ilqr_settings;
     ilqr_settings.dt = 0.01;  // the control discretization in [sec]
