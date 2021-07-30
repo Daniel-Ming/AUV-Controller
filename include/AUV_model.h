@@ -82,7 +82,7 @@ namespace my_sys {
                               B8_(arg.B8_)
                     {
                     }
-                    
+
                     //! destructor
                     virtual ~AUV_Model() {}
                     //! deep copy
