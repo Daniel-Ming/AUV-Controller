@@ -82,13 +82,7 @@ namespace my_sys {
                               B8_(arg.B8_)
                     {
                     }
-
-//                    AUV_Model(Eigen::Matrix<double,8,8> A, Eigen::Matrix<double,8,8> B, std::shared_ptr<ct::core::Controller<8, 8>> controller = nullptr)
-//                        : ct::core::ControlledSystem<8, 8>(controller),
-//                            A_(A),
-//                            B_(B)
-//                    {
-//                    }
+                    
                     //! destructor
                     virtual ~AUV_Model() {}
                     //! deep copy
