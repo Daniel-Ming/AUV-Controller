@@ -54,14 +54,14 @@ int main(int argc, char** argv){
 
 //    u_des
 //    {
-//        (0,0) 12
-//                (1,0) 12
-//                (2,0) 12
-//                (3,0) 12
-//                (4,0) 12
-//                (5,0) 12
-//                (6,0) 12
-//                (7,0) 1
+//       (0,0) 12
+//       (1,0) 12
+//       (2,0) 12
+//       (3,0) 12
+//       (4,0) 12
+//       (5,0) 12
+//       (6,0) 12
+//       (7,0) 1
 //    }
 
     std::shared_ptr<ct::core::ControlledSystem<state_dim, control_dim>> AUV_Dynamics(new my_sys::auv_model::AUV_Model(A,B));
@@ -137,6 +137,9 @@ int main(int argc, char** argv){
     // limit the maximum number of runs in this example
     size_t maxNumRuns = 50;
     std::cout << "Starting to run MPC" << std::endl;
+//    ct::core::Time t0 = 0.0;
+//    ct::core::Integrator<state_dim> integrator(AUV_Dynamics);
+//    integrator.integrate_n_steps(x0, t0, 5000, 0.1);
     for (size_t i = 0; i < maxNumRuns; i++){
         // time which has passed since start of MPC
         auto current_time = std::chrono::high_resolution_clock::now();
@@ -150,10 +153,17 @@ int main(int argc, char** argv){
 
         current_time = std::chrono::high_resolution_clock::now();
         t = 1e-6 * std::chrono::duration_cast<std::chrono::microseconds>(current_time - start_time).count();
-
         bool success = ilqr_mpc.finishIteration(x0, t, newPolicy, ts_newPolicy);
         newPolicy.computeControl(x0,t,u0);
-        cout << "Control Input: " << x0 << endl;
+//        StateTrajectory<state_dim> x0 = newPolicy.getReferenceStateTrajectory();
+        cout << "control input: " << u0 << endl;
+//        cout << "State2: " << x0[1] << endl;
+//        cout << "State3: " << x0[2] << endl;
+//        cout << "State4: " << x0[3] << endl;
+//        cout << "State5: " << x0[4] << endl;
+//        cout << "State6: " << x0[5] << endl;
+//        cout << "State7: " << x0[6] << endl;
+//        cout << "State8: " << x0[7] << endl;
         // we break the loop in case the time horizon is reached or solve() failed
         if (ilqr_mpc.timeHorizonReached() | !success)
             break;
